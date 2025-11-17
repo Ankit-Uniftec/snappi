@@ -19,7 +19,7 @@ import {
   ExternalLink
 } from "lucide-react";
 
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import ReferralCard from "@/components/referrals/ReferralCard";
@@ -89,6 +89,57 @@ const topInfluencers = [
 
 export const Dashboard = () => {
   const { toast } = useToast();
+  const [userName, setUserName]=useState("");
+  const [loading, setLoading]=useState(true);
+  const [activeCount, setActiveCount]=useState(0);
+  const [totalBudget, setTotalBudget]=useState(0);
+  const [campaigns, setCampaigns]= useState<any[]>([]);
+
+  //for display the active capmaigns and total spen etc:
+  useEffect(() => {
+    const fetchCampaigns = async () => {
+      setLoading(true);
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
+
+      if (!session?.user) {
+        console.error("No user session found");
+        setLoading(false);
+        return;
+      }
+
+      const userId = session.user.id;
+      const { data, error } = await supabase
+        .from("campaigns")
+        .select("*")
+        .eq("owner_id", userId)
+        .order("created_at", { ascending: false });
+
+      if (error) console.error("Error fetching campaigns:", error);
+      else {
+        const normalized = data.map((c) => ({
+          ...c,
+          status:
+            c.status?.charAt(0).toUpperCase() + c.status?.slice(1).toLowerCase(),
+        }));
+        setCampaigns(normalized);
+        // Calculate active campaigns and total budget:
+        const active = normalized.filter((c)=> c.status?.toLowerCase()==="active").length;
+        setActiveCount(active);
+        //Total budget
+        const total = normalized.reduce((sum,c)=> sum + (c.budget || 0),0);
+        setTotalBudget(total);
+      }
+      setLoading(false);
+    };
+
+    fetchCampaigns();
+  }, []);
+
+
+  //--------------------------------------------------------------------
+
 
   useEffect(() => {
     const handleReferral = async () => {
@@ -110,6 +161,20 @@ export const Dashboard = () => {
 
     handleReferral();
   }, [toast]);
+  useEffect(() => {
+  const getUserName = async () => {
+    const { data } = await supabase.auth.getUser();
+    const user = data?.user;
+
+    if (user) {
+      const name = user.user_metadata?.firstName;
+
+      setUserName(name);
+    }
+  };
+
+  getUserName();
+}, []);
 
   return (
     <div className="min-h-screen bg-background">
@@ -120,7 +185,7 @@ export const Dashboard = () => {
         <main className="flex-1 p-6 space-y-8 max-w-7xl">
           {/* Welcome Section */}
           <div className="space-y-3">
-            <h1 className="text-4xl font-bold tracking-tight">Welcome back, Sarah! 👋</h1>
+            <h1 className="text-4xl font-bold tracking-tight">Welcome back, {userName}! 👋</h1>
             <p className="text-lg text-muted-foreground">Here's what's happening with your influencer campaigns today.</p>
           </div>
 
@@ -128,7 +193,7 @@ export const Dashboard = () => {
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
             <StatsCard
               title="Active Campaigns"
-              value="12"
+              value={activeCount.toLocaleString()}
               change={{ value: "+2", type: "increase" }}
               icon={<Target className="h-4 w-4" />}
             />
@@ -146,7 +211,7 @@ export const Dashboard = () => {
             />
             <StatsCard
               title="Total Spend"
-              value="$24,680"
+              value={`$${totalBudget.toLocaleString()}`}
               change={{ value: "+8%", type: "increase" }}
               icon={<DollarSign className="h-4 w-4" />}
             />

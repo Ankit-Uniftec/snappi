@@ -61,6 +61,8 @@ export const Campaigns = () => {
   const [campaigns, setCampaigns] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
+  const [activeCount, setActiveCount]= useState(0);
+  const [totalBudget, setTotalBudget]= useState(0);
   const { toast } = useToast();
 
   useEffect(() => {
@@ -91,6 +93,12 @@ export const Campaigns = () => {
             c.status?.charAt(0).toUpperCase() + c.status?.slice(1).toLowerCase(),
         }));
         setCampaigns(normalized);
+        // Calculate active campaigns and total budget:
+        const active = normalized.filter((c)=> c.status?.toLowerCase()==="active").length;
+        setActiveCount(active);
+        //Total budget
+        const total = normalized.reduce((sum,c)=> sum + (c.budget || 0),0);
+        setTotalBudget(total);
       }
       setLoading(false);
     };
@@ -211,7 +219,7 @@ const handleComplete = async (campaign: any) => {
                   <p className="text-sm text-muted-foreground font-medium">
                     Active Campaigns
                   </p>
-                  <p className="text-2xl font-bold mt-1">12</p>
+                  <p className="text-2xl font-bold mt-1">{activeCount}</p>
                 </div>
               </CardContent>
             </Card>
@@ -224,7 +232,7 @@ const handleComplete = async (campaign: any) => {
                   <p className="text-sm text-muted-foreground font-medium">
                     Total Budget
                   </p>
-                  <p className="text-2xl font-bold mt-1">$24.6K</p>
+                  <p className="text-2xl font-bold mt-1">${totalBudget.toLocaleString()}</p>
                 </div>
               </CardContent>
             </Card>

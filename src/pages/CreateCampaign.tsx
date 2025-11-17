@@ -144,7 +144,7 @@ export const CreateCampaign = () => {
         },
         attachments: attachmentsMeta.length ? attachmentsMeta : null,
         // status: "active",
-        status: formData.type ,
+        status: formData.type,
         metadata: null,
       };
 
@@ -171,6 +171,15 @@ export const CreateCampaign = () => {
     } finally {
       setLoading(false);
     }
+  };
+  const handleSaveAsDraft = async () => {
+    // Force type to draft before saving
+    setFormData((prev) => ({ ...prev, type: "draft" }));
+
+    // Call the submit handler
+    await handleSubmit({
+      preventDefault: () => { },
+    } as any);
   };
 
   return (
@@ -552,7 +561,7 @@ export const CreateCampaign = () => {
               <Button
                 type="button"
                 variant="outline"
-                onClick={() => navigate("/campaigns")}
+                onClick={handleSaveAsDraft}
               >
                 Save as Draft
               </Button>
