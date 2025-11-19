@@ -1,3 +1,5 @@
+//////////////////////////////////////////////////
+
 import { useState } from "react";
 import { Header } from "@/components/layout/Header";
 import { Sidebar } from "@/components/layout/Sidebar";
@@ -13,9 +15,9 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Link } from "react-router-dom";
-import { 
-  Search, 
-  Filter, 
+import {
+  Search,
+  Filter,
   Star,
   MapPin,
   Users,
@@ -67,39 +69,42 @@ export const SearchInfluencers = () => {
   const [keywords, setKeywords] = useState("");
   const [followerRange, setFollowerRange] = useState([5000, 50000]);
   const [engagementRange, setEngagementRange] = useState([4.0, 10.0]);
-  
+
   const [showResults, setShowResults] = useState(false);
   const [shortlist, setShortlist] = useState<string[]>([]);
+  const [mode, setMode] = useState<"none" | "all" | "filtered">("none");
 
   // Filter influencers based on search criteria
   const filteredInfluencers = influencers.filter(influencer => {
-    const matchesQuery = !searchQuery || 
+    const matchesQuery = !searchQuery ||
       influencer.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
       (influencer.categories && influencer.categories.toLowerCase().includes(searchQuery.toLowerCase()));
-    
-    const matchesPlatform = selectedPlatforms.length === 0 || 
+
+    const matchesPlatform = selectedPlatforms.length === 0 ||
       (influencer.platform && selectedPlatforms.includes(influencer.platform.toLowerCase()));
-    
-    const matchesLocation = !selectedLocation || 
+
+    const matchesLocation = !selectedLocation ||
       (influencer.location && influencer.location.toLowerCase().includes(selectedLocation));
-      
+
     const matchesFollowerRange = !influencer.follower_count ||
       (influencer.follower_count >= followerRange[0] && influencer.follower_count <= followerRange[1]);
-    
-    const matchesEngagementRange = 
+
+    const matchesEngagementRange =
       (influencer.engagement_rate >= engagementRange[0] && influencer.engagement_rate <= engagementRange[1]);
-    
+
     return matchesQuery && matchesPlatform && matchesLocation && matchesFollowerRange && matchesEngagementRange;
   });
 
   const allCountries = [...mainCountries, ...otherCountries];
+
+  const resultsToShow=mode === "all" ? influencers : filteredInfluencers;
 
   return (
     <div className="min-h-screen bg-background">
       <Header />
       <div className="flex">
         <Sidebar />
-        
+
         <main className="flex-1 p-6 space-y-8 max-w-7xl">
           {/* Header */}
           <div className="space-y-4">
@@ -145,12 +150,12 @@ export const SearchInfluencers = () => {
               {/* Search Bar */}
               <div className="relative mb-8">
                 <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 h-5 w-5 text-muted-foreground z-10" />
-                 <Input
-                   placeholder="Fashion micro-influencer in New York City"
-                   value={searchQuery}
-                   onChange={(e) => setSearchQuery(e.target.value)}
-                   className="pl-12 min-h-[52px] text-base shadow-lg border-0 bg-background/80 backdrop-blur-sm focus:shadow-xl transition-all duration-300 rounded-xl"
-                 />
+                <Input
+                  placeholder="Fashion micro-influencer in New York City"
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="pl-12 min-h-[52px] text-base shadow-lg border-0 bg-background/80 backdrop-blur-sm focus:shadow-xl transition-all duration-300 rounded-xl"
+                />
               </div>
 
               {/* Filter Grid */}
@@ -175,7 +180,7 @@ export const SearchInfluencers = () => {
                       { value: "pinterest", label: "Pinterest", platform: "pinterest" }
                     ].map((platform) => (
                       <div key={platform.value} className="flex items-center space-x-3 p-2 rounded-lg hover:bg-muted/50 transition-colors">
-                        <Checkbox 
+                        <Checkbox
                           id={platform.value}
                           checked={selectedPlatforms.includes(platform.value)}
                           onCheckedChange={(checked) => {
@@ -225,146 +230,143 @@ export const SearchInfluencers = () => {
                 </div>
 
                 {/* Location */}
-                 <div className="space-y-4">
-                   <div className="flex items-center space-x-3 mb-4">
-                     <div className="p-2 rounded-lg bg-primary/10">
-                       <MapPin className="h-5 w-5 text-primary" />
-                     </div>
-                     <label className="text-base font-semibold text-foreground">Location</label>
-                   </div>
-                   <Select value={selectedLocation} onValueChange={setSelectedLocation}>
-                     <SelectTrigger className="min-h-[48px] rounded-xl border-0 bg-background/50 backdrop-blur-sm shadow-sm">
-                       <SelectValue placeholder="Any location" />
-                     </SelectTrigger>
-                     <SelectContent align="end" side="bottom" className="max-h-60 bg-background/95 backdrop-blur-sm z-50 rounded-xl border shadow-lg">
-                       {mainCountries.map((country) => (
-                         <SelectItem key={country.value} value={country.value}>
-                           {country.label}
-                         </SelectItem>
-                       ))}
-                       <div className="border-t my-1"></div>
-                       {otherCountries.map((country) => (
-                         <SelectItem key={country.value} value={country.value}>
-                           {country.label}
-                         </SelectItem>
-                       ))}
-                     </SelectContent>
-                   </Select>
-                 </div>
+                <div className="space-y-4">
+                  <div className="flex items-center space-x-3 mb-4">
+                    <div className="p-2 rounded-lg bg-primary/10">
+                      <MapPin className="h-5 w-5 text-primary" />
+                    </div>
+                    <label className="text-base font-semibold text-foreground">Location</label>
+                  </div>
+                  <Select value={selectedLocation} onValueChange={setSelectedLocation}>
+                    <SelectTrigger className="min-h-[48px] rounded-xl border-0 bg-background/50 backdrop-blur-sm shadow-sm">
+                      <SelectValue placeholder="Any location" />
+                    </SelectTrigger>
+                    <SelectContent align="end" side="bottom" className="max-h-60 bg-background/95 backdrop-blur-sm z-50 rounded-xl border shadow-lg">
+                      {mainCountries.map((country) => (
+                        <SelectItem key={country.value} value={country.value}>
+                          {country.label}
+                        </SelectItem>
+                      ))}
+                      <div className="border-t my-1"></div>
+                      {otherCountries.map((country) => (
+                        <SelectItem key={country.value} value={country.value}>
+                          {country.label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
 
-                 {/* Engagement Range */}
-                 <div className="space-y-4">
-                   <div className="flex items-center space-x-3 mb-4">
-                     <div className="p-2 rounded-lg bg-primary/10">
-                       <BarChart3 className="h-5 w-5 text-primary" />
-                     </div>
-                     <label className="text-base font-semibold text-foreground">Engagement Range</label>
-                   </div>
-                   <div className="p-4 bg-background/50 backdrop-blur-sm rounded-xl shadow-sm">
-                     <Slider
-                       value={engagementRange}
-                       onValueChange={setEngagementRange}
-                       max={15}
-                       min={1}
-                       step={0.5}
-                       className="w-full"
-                     />
-                     <div className="flex justify-between text-sm text-muted-foreground mt-3">
-                       <span>1%</span>
-                       <span className="font-medium text-primary">{engagementRange[0]}% - {engagementRange[1]}%</span>
-                       <span>15%</span>
-                     </div>
-                   </div>
-                 </div>
+                {/* Engagement Range */}
+                <div className="space-y-4">
+                  <div className="flex items-center space-x-3 mb-4">
+                    <div className="p-2 rounded-lg bg-primary/10">
+                      <BarChart3 className="h-5 w-5 text-primary" />
+                    </div>
+                    <label className="text-base font-semibold text-foreground">Engagement Range</label>
+                  </div>
+                  <div className="p-4 bg-background/50 backdrop-blur-sm rounded-xl shadow-sm">
+                    <Slider
+                      value={engagementRange}
+                      onValueChange={setEngagementRange}
+                      max={15}
+                      min={1}
+                      step={0.5}
+                      className="w-full"
+                    />
+                    <div className="flex justify-between text-sm text-muted-foreground mt-3">
+                      <span>1%</span>
+                      <span className="font-medium text-primary">{engagementRange[0]}% - {engagementRange[1]}%</span>
+                      <span>15%</span>
+                    </div>
+                  </div>
+                </div>
 
-                 {/* Follower Count Range */}
-                 <div className="space-y-4">
-                   <div className="flex items-center space-x-3 mb-4">
-                     <div className="p-2 rounded-lg bg-primary/10">
-                       <Users className="h-5 w-5 text-primary" />
-                     </div>
-                     <label className="text-base font-semibold text-foreground">Follower Count Range</label>
-                   </div>
-                   <div className="p-4 bg-background/50 backdrop-blur-sm rounded-xl shadow-sm">
-                     <Slider
-                       value={followerRange}
-                       onValueChange={setFollowerRange}
-                       max={100000}
-                       min={1000}
-                       step={1000}
-                       className="w-full"
-                     />
-                     <div className="flex justify-between text-sm text-muted-foreground mt-3">
-                       <span>1K</span>
-                       <span className="font-medium text-primary">{(followerRange[0] / 1000).toFixed(0)}K - {(followerRange[1] / 1000).toFixed(0)}K</span>
-                       <span>100K</span>
-                     </div>
-                   </div>
-                 </div>
+                {/* Follower Count Range */}
+                <div className="space-y-4">
+                  <div className="flex items-center space-x-3 mb-4">
+                    <div className="p-2 rounded-lg bg-primary/10">
+                      <Users className="h-5 w-5 text-primary" />
+                    </div>
+                    <label className="text-base font-semibold text-foreground">Follower Count Range</label>
+                  </div>
+                  <div className="p-4 bg-background/50 backdrop-blur-sm rounded-xl shadow-sm">
+                    <Slider
+                      value={followerRange}
+                      onValueChange={setFollowerRange}
+                      max={100000}
+                      min={1000}
+                      step={1000}
+                      className="w-full"
+                    />
+                    <div className="flex justify-between text-sm text-muted-foreground mt-3">
+                      <span>1K</span>
+                      <span className="font-medium text-primary">{(followerRange[0] / 1000).toFixed(0)}K - {(followerRange[1] / 1000).toFixed(0)}K</span>
+                      <span>100K</span>
+                    </div>
+                  </div>
+                </div>
 
-                 {/* Keywords/Tags */}
-                 <div className="space-y-4">
-                   <div className="flex items-center space-x-3 mb-4">
-                     <div className="p-2 rounded-lg bg-primary/10">
-                       <Hash className="h-5 w-5 text-primary" />
-                     </div>
-                     <label className="text-base font-semibold text-foreground">Keywords/Tags</label>
-                   </div>
-                   <Input
-                     placeholder="e.g., sustainable, vegan, tech reviews, makeup tutorials"
-                     value={keywords}
-                     onChange={(e) => setKeywords(e.target.value)}
-                     className="min-h-[48px] rounded-xl border-0 bg-background/50 backdrop-blur-sm shadow-sm"
-                   />
-                 </div>
+                {/* Keywords/Tags */}
+                <div className="space-y-4">
+                  <div className="flex items-center space-x-3 mb-4">
+                    <div className="p-2 rounded-lg bg-primary/10">
+                      <Hash className="h-5 w-5 text-primary" />
+                    </div>
+                    <label className="text-base font-semibold text-foreground">Keywords/Tags</label>
+                  </div>
+                  <Input
+                    placeholder="e.g., sustainable, vegan, tech reviews, makeup tutorials"
+                    value={keywords}
+                    onChange={(e) => setKeywords(e.target.value)}
+                    className="min-h-[48px] rounded-xl border-0 bg-background/50 backdrop-blur-sm shadow-sm"
+                  />
+                </div>
               </div>
 
               <div className="flex gap-4">
-                 <Button 
-                   className="flex-1 md:flex-none" 
-                   onClick={() => {
-                      console.log('Searching with filters:', {
-                        searchQuery,
-                        selectedPlatforms,
-                        selectedNiche,
-                        selectedLocation,
-                        followerRange,
-                        engagementRange,
-                        keywords,
-                        campaignObjective
-                      });
-                     setShowResults(true);
-                   }}
-                   disabled={!campaignObjective}
-                 >
-                   <Search className="h-4 w-4 mr-2" />
-                   Search Influencers
-                 </Button>
-                 <Button variant="outline" onClick={() => console.log('Viewing all influencers...')}>
-                   <Users className="h-4 w-4 mr-2" />
-                   View All Influencers
-                 </Button>
-               </div>
+                <Button
+                  className="flex-1 md:flex-none"
+                  onClick={() => {
+                    setMode("filtered");
+                    setShowResults(true);
+                  }}
+                  disabled={!campaignObjective}
+                >
+                  <Search className="h-4 w-4 mr-2" />
+                  Search Influencers
+                </Button>
+                <Button
+                  variant="outline"
+                  onClick={() => {
+                    setMode("all");
+                    setShowResults(true);
+                  }}
+                >
+                  <Users className="h-4 w-4 mr-2" />
+                  View All Influencers
+                </Button>
+              </div>
             </CardContent>
           </Card>
 
           {/* Results */}
           {showResults && (
             <div className="space-y-4">
-                <div className="flex items-center justify-between">
-                  <h2 className="text-xl font-semibold">Search Results</h2>
-                  <div className="flex items-center space-x-4">
-                    <Button variant="outline" size="sm" asChild>
-                      <Link to="/shortlist">
-                        <Plus className="h-4 w-4 mr-2" />
-                        View Shortlist ({shortlist.length})
-                      </Link>
-                    </Button>
-                    <div className="text-sm text-muted-foreground">
-                      Found {filteredInfluencers.length} influencer{filteredInfluencers.length !== 1 ? 's' : ''}
-                    </div>
-                  </div>
+              <div className="flex items-center justify-between">
+                <h2 className="text-xl font-semibold">Search Results</h2>
+                <div className="flex items-center space-x-4">
+                  <Button variant="outline" size="sm" asChild>
+                    <Link to="/shortlist">
+                      <Plus className="h-4 w-4 mr-2" />
+                      View Shortlist ({shortlist.length})
+                    </Link>
+                  </Button>
+                  {/* <div className="text-sm text-muted-foreground">
+                    Found {filteredInfluencers.length} influencer{filteredInfluencers.length !== 1 ? 's' : ''}
+                  </div> */}
                 </div>
+              </div>
 
               <div className="grid gap-6">
                 {loading ? (
@@ -375,112 +377,112 @@ export const SearchInfluencers = () => {
                   <div className="text-center py-8">
                     <p className="text-destructive">Error: {error}</p>
                   </div>
-                ) : filteredInfluencers.length === 0 ? (
+                ) : resultsToShow.length === 0 ? (
                   <div className="text-center py-8">
                     <p className="text-muted-foreground">No influencers found matching your criteria.</p>
                   </div>
                 ) : (
-                  filteredInfluencers.map((influencer) => (
-                   <Card key={influencer.id} className="shadow-card hover:shadow-elegant transition-shadow duration-300">
-                     <CardContent className="p-6">
-                       <div className="flex flex-col lg:flex-row gap-6">
-                         {/* Profile Info */}
-                         <div className="flex items-start space-x-4">
-                           <div className="h-16 w-16 rounded-full bg-gradient-primary flex items-center justify-center text-primary-foreground font-bold text-lg">
-                             {influencer.name.split(' ').map(n => n[0]).join('')}
-                           </div>
-                           <div className="space-y-2">
-                             <div>
-                               <h3 className="text-lg font-semibold">{influencer.name}</h3>
-                               {canAccessContactInfo(influencer.id) && influencer.email && (
-                                 <p className="text-sm text-muted-foreground">{influencer.email}</p>
-                               )}
-                             </div>
-                             <div className="flex items-center space-x-4 text-sm">
+                  resultsToShow.map((influencer) => (
+                    <Card key={influencer.id} className="shadow-card hover:shadow-elegant transition-shadow duration-300">
+                      <CardContent className="p-6">
+                        <div className="flex flex-col lg:flex-row gap-6">
+                          {/* Profile Info */}
+                          <div className="flex items-start space-x-4">
+                            <div className="h-16 w-16 rounded-full bg-gradient-primary flex items-center justify-center text-primary-foreground font-bold text-lg">
+                              {influencer.name.split(' ').map(n => n[0]).join('')}
+                            </div>
+                            <div className="space-y-2">
+                              <div>
+                                <h3 className="text-lg font-semibold">{influencer.name}</h3>
+                                {canAccessContactInfo(influencer.id) && influencer.email && (
+                                  <p className="text-sm text-muted-foreground">{influencer.email}</p>
+                                )}
+                              </div>
+                              <div className="flex items-center space-x-4 text-sm">
                                 <div className="flex items-center space-x-1">
                                   <PlatformIcon platform={influencer.platform || 'instagram'} />
                                   <span>{influencer.platform || 'Unknown'}</span>
                                 </div>
-                               <div className="flex items-center space-x-1">
-                                 <MapPin className="h-4 w-4" />
-                                 <span>{influencer.location || 'Location not specified'}</span>
-                               </div>
-                             </div>
-                             <Badge variant="secondary">{influencer.categories || 'General'}</Badge>
-                           </div>
-                         </div>
+                                <div className="flex items-center space-x-1">
+                                  <MapPin className="h-4 w-4" />
+                                  <span>{influencer.location || 'Location not specified'}</span>
+                                </div>
+                              </div>
+                              <Badge variant="secondary">{influencer.categories || 'General'}</Badge>
+                            </div>
+                          </div>
 
-                         {/* Stats */}
-                         <div className="flex-1 grid grid-cols-2 md:grid-cols-4 gap-4">
-                           <div className="text-center">
-                             <div className="text-lg font-bold">
-                               {influencer.follower_count 
-                                 ? (influencer.follower_count / 1000).toFixed(1) + 'K'
-                                 : 'N/A'
-                               }
-                             </div>
-                             <div className="text-xs text-muted-foreground">Followers</div>
-                           </div>
-                           <div className="text-center">
-                             <div className="text-lg font-bold text-success">
-                               {influencer.engagement_rate.toFixed(1)}%
-                             </div>
-                             <div className="text-xs text-muted-foreground">Engagement</div>
-                           </div>
-                           <div className="text-center">
-                             <div className="text-lg font-bold text-primary">
-                               {influencer.match_score ? influencer.match_score + '%' : 'N/A'}
-                             </div>
-                             <div className="text-xs text-muted-foreground">Match Score</div>
-                           </div>
-                           <div className="text-center">
-                             <div className="text-lg font-bold text-success">
-                               {canAccessContactInfo(influencer.id) ? '£15-45' : 'Contact for rates'}
-                             </div>
-                             <div className="text-xs text-muted-foreground">Per Post</div>
-                           </div>
-                         </div>
+                          {/* Stats */}
+                          <div className="flex-1 grid grid-cols-2 md:grid-cols-4 gap-4">
+                            <div className="text-center">
+                              <div className="text-lg font-bold">
+                                {influencer.follower_count
+                                  ? (influencer.follower_count / 1000).toFixed(1) + 'K'
+                                  : 'N/A'
+                                }
+                              </div>
+                              <div className="text-xs text-muted-foreground">Followers</div>
+                            </div>
+                            <div className="text-center">
+                              <div className="text-lg font-bold text-success">
+                                {influencer.engagement_rate.toFixed(1)}%
+                              </div>
+                              <div className="text-xs text-muted-foreground">Engagement</div>
+                            </div>
+                            <div className="text-center">
+                              <div className="text-lg font-bold text-primary">
+                                {influencer.match_score ? influencer.match_score + '%' : 'N/A'}
+                              </div>
+                              <div className="text-xs text-muted-foreground">Match Score</div>
+                            </div>
+                            <div className="text-center">
+                              <div className="text-lg font-bold text-success">
+                                {canAccessContactInfo(influencer.id) ? '£15-45' : 'Contact for rates'}
+                              </div>
+                              <div className="text-xs text-muted-foreground">Per Post</div>
+                            </div>
+                          </div>
 
-                         {/* Actions */}
-                         <div className="flex flex-col space-y-2">
-                           <Button 
-                             size="sm"
-                             onClick={() => {
-                               if (shortlist.includes(influencer.id)) {
-                                 setShortlist(shortlist.filter(id => id !== influencer.id));
-                               } else {
-                                 setShortlist([...shortlist, influencer.id]);
-                               }
-                             }}
-                             variant={shortlist.includes(influencer.id) ? "secondary" : "default"}
-                           >
-                             <Plus className="h-4 w-4 mr-2" />
-                             {shortlist.includes(influencer.id) ? "In Shortlist" : "Add to Shortlist"}
-                           </Button>
-                            <Button 
-                              variant="outline" 
-                              size="sm" 
-                              onClick={() => console.log(`Viewing profile for ${influencer.name}`)}
+                          {/* Actions */}
+                          <div className="flex flex-col space-y-2">
+                            <Button
+                              size="sm"
+                              onClick={() => {
+                                if (shortlist.includes(influencer.id)) {
+                                  setShortlist(shortlist.filter(id => id !== influencer.id));
+                                } else {
+                                  setShortlist([...shortlist, influencer.id]);
+                                }
+                              }}
+                              variant={shortlist.includes(influencer.id) ? "secondary" : "default"}
+                            >
+                              <Plus className="h-4 w-4 mr-2" />
+                              {shortlist.includes(influencer.id) ? "In Shortlist" : "Add to Shortlist"}
+                            </Button>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => window.open(influencer.platform_link, "_blank","noopener,noreferrer")}
                             >
                               View Profile
                             </Button>
-                         </div>
-                       </div>
-                     </CardContent>
-                   </Card>
-                 ))
+                          </div>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  ))
                 )}
               </div>
 
-               {/* Load More */}
-               <div className="text-center">
-                 <Button variant="outline" onClick={() => {
-                   console.log('Loading more influencer results...');
-                   // Would load more influencers from API
-                 }}>
-                   Load More Results
-                 </Button>
-               </div>
+              {/* Load More */}
+              <div className="text-center">
+                <Button variant="outline" onClick={() => {
+                  console.log('Loading more influencer results...');
+                  // Would load more influencers from API
+                }}>
+                  Load More Results
+                </Button>
+              </div>
             </div>
           )}
         </main>
@@ -488,3 +490,4 @@ export const SearchInfluencers = () => {
     </div>
   );
 };
+
