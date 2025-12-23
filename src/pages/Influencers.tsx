@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { 
+import {
   Search,
   Filter,
   Star,
@@ -25,6 +25,7 @@ import jamesImage from "@/assets/james-thompson.jpg";
 import mayaImage from "@/assets/maya-chen.jpg";
 
 export const Influencers = () => {
+
   const { influencers, loading, error, canAccessContactInfo } = useInfluencers();
 
   const getStatusColor = (status: string) => {
@@ -58,13 +59,44 @@ export const Influencers = () => {
       default: return "text-gray-500";
     }
   };
+  const handleMessageClick = (influencer: any) => {
+    if (!influencer.email) {
+      alert("No contact email available for this influencer.");
+      return;
+    }
+
+    const subject = `Collaboration Opportunity with Your Brand`;
+    const body = `Hi ${influencer.name},
+
+I hope you're doing great! We would love to collaborate with you.
+
+Looking forward to hearing from you.
+
+Best regards,
+[Your Name]`;
+
+    // Try Gmail first, then fallback
+    const gmailUrl = `https://mail.google.com/mail/?view=cm&fs=1&to=${encodeURIComponent(
+      influencer.email
+    )}&su=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+
+    // Open Gmail in new tab
+    window.open(gmailUrl, "_blank");
+
+    // Also trigger default mail app if Gmail is not configured
+    setTimeout(() => {
+      window.location.href = `mailto:${influencer.email}?subject=${encodeURIComponent(
+        subject
+      )}&body=${encodeURIComponent(body)}`;
+    }, 500);
+  };
 
   return (
     <div className="min-h-screen bg-background">
       <Header />
       <div className="flex">
         <Sidebar />
-        
+
         <main className="flex-1 p-8">
           <div className="max-w-7xl mx-auto space-y-8">
             {/* Header */}
@@ -112,7 +144,7 @@ export const Influencers = () => {
                 </CardHeader>
                 <CardContent>
                   <div className="text-2xl font-bold">
-                    {loading ? "..." : influencers.length > 0 
+                    {loading ? "..." : influencers.length > 0
                       ? (influencers.reduce((acc, inf) => acc + inf.engagement_rate, 0) / influencers.length).toFixed(1) + "%"
                       : "0%"
                     }
@@ -176,7 +208,7 @@ export const Influencers = () => {
                       <TabsTrigger value="favorites">Favorites (0)</TabsTrigger>
                       <TabsTrigger value="potential">Potential (0)</TabsTrigger>
                     </TabsList>
-                    
+
                     <TabsContent value="all" className="space-y-6">
                       {influencers.length === 0 ? (
                         <div className="text-center py-8">
@@ -190,8 +222,8 @@ export const Influencers = () => {
                                 {/* Profile Info */}
                                 <div className="flex items-start space-x-4">
                                   {getProfileImage(influencer.name, influencer.profile_image) ? (
-                                    <img 
-                                      src={getProfileImage(influencer.name, influencer.profile_image)} 
+                                    <img
+                                      src={getProfileImage(influencer.name, influencer.profile_image)}
                                       alt={influencer.name}
                                       className="h-16 w-16 rounded-full object-cover"
                                     />
@@ -225,7 +257,7 @@ export const Influencers = () => {
                                 <div className="flex-1 grid grid-cols-2 md:grid-cols-4 gap-4">
                                   <div className="text-center">
                                     <div className="text-lg font-bold">
-                                      {influencer.follower_count 
+                                      {influencer.follower_count
                                         ? (influencer.follower_count / 1000).toFixed(1) + 'K'
                                         : 'N/A'
                                       }
@@ -240,7 +272,7 @@ export const Influencers = () => {
                                   </div>
                                   <div className="text-center">
                                     <div className="text-lg font-bold">
-                                      {influencer.average_views 
+                                      {influencer.average_views
                                         ? (influencer.average_views / 1000).toFixed(1) + 'K'
                                         : 'N/A'
                                       }
@@ -257,7 +289,13 @@ export const Influencers = () => {
 
                                 {/* Actions */}
                                 <div className="flex flex-col space-y-2 min-w-[120px]">
-                                  <Button size="sm" variant="default">
+                                  <Button
+                                    size="sm"
+                                    variant="default"
+                                    onClick={() => handleMessageClick(influencer)}
+                                    // disabled={!canAccessContactInfo(influencer.id) || !influencer.email}
+                                    disabled={!influencer.email}
+                                  >
                                     <MessageSquare className="h-4 w-4 mr-2" />
                                     Message
                                   </Button>
@@ -282,19 +320,19 @@ export const Influencers = () => {
                         ))
                       )}
                     </TabsContent>
-                    
+
                     <TabsContent value="collaborating" className="space-y-6">
                       <div className="text-center py-8">
                         <p className="text-muted-foreground">No active collaborations found.</p>
                       </div>
                     </TabsContent>
-                    
+
                     <TabsContent value="favorites" className="space-y-6">
                       <div className="text-center py-8">
                         <p className="text-muted-foreground">No favorite influencers yet.</p>
                       </div>
                     </TabsContent>
-                    
+
                     <TabsContent value="potential" className="space-y-6">
                       <div className="text-center py-8">
                         <p className="text-muted-foreground">No potential influencers identified.</p>

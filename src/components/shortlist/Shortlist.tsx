@@ -2,7 +2,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Link } from "react-router-dom";
-import { 
+import {
   Plus,
   Users,
   TrendingUp,
@@ -15,6 +15,8 @@ import {
   MoreHorizontal,
   Search
 } from "lucide-react";
+import { useEffect, useState } from "react";
+import { supabase } from "@/integrations/supabase/client";
 
 interface ShortlistedInfluencer {
   id: number;
@@ -45,7 +47,7 @@ const shortlistedInfluencers: ShortlistedInfluencer[] = [
   {
     id: 2,
     name: "Mike Chen",
-    handle: "@techreviewmike", 
+    handle: "@techreviewmike",
     platform: "YouTube",
     followers: "18.3K",
     engagement: "8.1%",
@@ -58,7 +60,7 @@ const shortlistedInfluencers: ShortlistedInfluencer[] = [
     id: 3,
     name: "Emma Wellness",
     handle: "@emmawellness",
-    platform: "TikTok", 
+    platform: "TikTok",
     followers: "32.1K",
     engagement: "7.4%",
     location: "Los Angeles, USA",
@@ -69,6 +71,96 @@ const shortlistedInfluencers: ShortlistedInfluencer[] = [
 ];
 
 export const Shortlist = () => {
+  const [shortlisted, setShortlisted] = useState<any[]>([]);
+  const [userId, setUserId] = useState<string | null>(null);
+  useEffect(() => {
+    const loadShortlist = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+      setUserId(user.id);
+
+      const { data, error } = await (supabase as any)
+        .from("shortlisted_influencers")
+        .select(`
+        id,
+        created_at,
+        influencers (
+          id,
+          name,
+          email,
+          categories,
+          follower_count,
+          engagement_rate,
+          location,
+          platform,
+          profile_image,
+          match_score
+        )
+      `)
+        .eq("user_id", user.id);
+
+      if (!error) {
+        setShortlisted(data);
+      }
+    };
+
+    loadShortlist();
+  }, []);
+
+  const handleMessageClick = (influencer: any) => {
+    if (!influencer.email) {
+      alert("No contact email available for this influencer.");
+      return;
+    }
+
+    const subject = `Collaboration Opportunity with Your Brand`;
+    const body = `Hi ${influencer.name},
+
+I hope you're doing great! We would love to collaborate with you.
+
+Looking forward to hearing from you.
+
+Best regards,
+[Your Name]`;
+
+    // Try Gmail first
+    const gmailUrl = `https://mail.google.com/mail/?view=cm&fs=1&to=${encodeURIComponent(
+      influencer.email
+    )}&su=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+
+    window.open(gmailUrl, "_blank");
+
+    // Fallback to default mail app
+    setTimeout(() => {
+      window.location.href = `mailto:${influencer.email}?subject=${encodeURIComponent(
+        subject
+      )}&body=${encodeURIComponent(body)}`;
+    }, 500);
+  };
+  const handleRemove = async (shortlistId: number) => {
+    if (!shortlistId) return;
+
+    const { error } = await (supabase as any)
+      .from("shortlisted_influencers")
+      .delete()
+      .eq("id", shortlistId);
+
+    if (error) {
+      console.error("Error removing influencer:", error);
+      alert("Failed to remove. Try again.");
+      return;
+    }
+
+    // Remove from UI instantly
+    setShortlisted(prev =>
+      prev.filter(item => item.id !== shortlistId)
+    );
+  };
+
+
+
+
+
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
@@ -98,12 +190,12 @@ export const Shortlist = () => {
               </div>
               <div>
                 <p className="text-sm text-muted-foreground">Total Shortlisted</p>
-                <p className="text-2xl font-bold">{shortlistedInfluencers.length}</p>
+                <p className="text-2xl font-bold">{shortlisted.length}</p>
               </div>
             </div>
           </CardContent>
         </Card>
-        
+
         <Card className="shadow-card">
           <CardContent className="p-6">
             <div className="flex items-center space-x-2">
@@ -113,95 +205,119 @@ export const Shortlist = () => {
               <div>
                 <p className="text-sm text-muted-foreground">Avg Match Score</p>
                 <p className="text-2xl font-bold">
-                  {Math.round(shortlistedInfluencers.reduce((acc, inf) => acc + inf.matchScore, 0) / shortlistedInfluencers.length)}%
+                  {shortlisted.length > 0
+                    ? Math.round(
+                      shortlisted.reduce(
+                        (acc, item) => acc + (item.influencers?.match_score || 0),
+                        0
+                      ) / shortlisted.length
+                    )
+                    : 0
+                  }%
                 </p>
               </div>
             </div>
           </CardContent>
         </Card>
-        
+
         <Card className="shadow-card">
           <CardContent className="p-6">
             <div className="flex items-center space-x-2">
               <div className="p-2 bg-accent/10 rounded-lg">
                 <Heart className="h-4 w-4 text-accent-foreground" />
               </div>
+
               <div>
                 <p className="text-sm text-muted-foreground">Avg Engagement</p>
+
                 <p className="text-2xl font-bold">
-                  {(shortlistedInfluencers.reduce((acc, inf) => acc + parseFloat(inf.engagement), 0) / shortlistedInfluencers.length).toFixed(1)}%
+                  {shortlisted.length > 0
+                    ? (
+                      shortlisted.reduce(
+                        (acc, item) => acc + (item.influencers?.engagement_rate || 0),
+                        0
+                      ) / shortlisted.length
+                    ).toFixed(1)
+                    : "0.0"
+                  }%
                 </p>
               </div>
             </div>
           </CardContent>
+
         </Card>
       </div>
 
       <div className="space-y-4">
-        {shortlistedInfluencers.map((influencer) => (
-          <Card key={influencer.id} className="shadow-card hover:shadow-elegant transition-shadow">
+        {shortlisted.map(({ id: shortlistId, influencers, created_at }) => (
+          <Card key={influencers.id} className="shadow-card hover:shadow-elegant transition-shadow">
             <CardContent className="p-6">
               <div className="flex items-start justify-between">
+
                 <div className="flex items-start space-x-4 flex-1">
                   <div className="h-16 w-16 rounded-full bg-gradient-primary flex items-center justify-center text-primary-foreground font-bold text-lg">
-                    {influencer.name.split(' ').map(n => n[0]).join('')}
+                    {influencers.name.split(" ").map(n => n[0]).join("")}
                   </div>
-                  
+
                   <div className="space-y-3 flex-1">
                     <div className="flex items-center space-x-3">
-                      <h3 className="text-lg font-semibold">{influencer.name}</h3>
-                      <Badge variant="secondary">{influencer.platform}</Badge>
-                      <div className="flex items-center space-x-1">
+                      <h3 className="text-lg font-semibold">{influencers.name}</h3>
+                      <Badge variant="secondary">{influencers.platform}</Badge>
+                      {/* <div className="flex items-center space-x-1">
                         <Star className="h-4 w-4 fill-yellow-400 text-yellow-400" />
-                        <span className="text-sm font-medium">{influencer.matchScore}% match</span>
-                      </div>
+                        <span className="text-sm font-medium">{influencers.match_score}</span>
+                      </div> */}
                     </div>
-                    
+
                     <div className="flex items-center space-x-2 text-sm text-muted-foreground">
-                      <span>{influencer.handle}</span>
+                      <span>{influencers.location}</span>
                       <span>•</span>
-                      <span>{influencer.location}</span>
-                      <span>•</span>
-                      <span>{influencer.niche}</span>
+                      <span>{influencers.categories}</span>
                     </div>
-                    
+
                     <div className="grid grid-cols-3 gap-4 text-sm">
                       <div>
                         <p className="text-muted-foreground">Followers</p>
-                        <p className="font-medium">{influencer.followers}</p>
+                        <p className="font-medium">{influencers.follower_count || "N/A"}</p>
                       </div>
                       <div>
                         <p className="text-muted-foreground">Engagement</p>
-                        <p className="font-medium">{influencer.engagement}</p>
+                        <p className="font-medium">{influencers.engagement_rate}%</p>
+                      </div>
+                      <div>
+                        <p className="text-muted-foreground">Match Score</p>
+                        <p className="font-medium">
+                          {influencers.match_score ? influencers.match_score + "%" : "N/A"}
+                        </p>
                       </div>
                       <div>
                         <p className="text-muted-foreground">Added</p>
-                        <p className="font-medium">{new Date(influencer.addedDate).toLocaleDateString()}</p>
+                        <p className="font-medium">{new Date(created_at).toLocaleDateString()}</p>
                       </div>
                     </div>
                   </div>
                 </div>
-                
+
                 <div className="flex items-center space-x-2">
-                  <Button 
-                    variant="outline" 
+                  <Button
+                    variant="outline"
                     size="sm"
-                    onClick={() => console.log(`Messaging ${influencer.name}`)}
+                    onClick={() => handleMessageClick(influencers)}
                   >
                     <MessageSquare className="h-4 w-4 mr-2" />
                     Message
                   </Button>
-                  <Button 
-                    variant="outline" 
+                  <Button
+                    variant="outline"
                     size="sm"
-                    onClick={() => console.log(`Removing ${influencer.name} from shortlist`)}
+                    onClick={() => handleRemove(shortlistId)}
                   >
                     Remove
                   </Button>
-                  <Button 
-                    variant="ghost" 
+                  <Button
+                    variant="ghost"
                     size="sm"
-                    onClick={() => console.log(`More options for ${influencer.name}`)}
+                    onClick={() => console.log(`More options for ${influencers.name}`)}
                   >
                     <MoreHorizontal className="h-4 w-4" />
                   </Button>

@@ -141,26 +141,26 @@ export const Dashboard = () => {
   //--------------------------------------------------------------------
 
 
-  useEffect(() => {
-    const handleReferral = async () => {
-      try {
-        const code = localStorage.getItem("refCode");
-        if (!code) return;
-        const { data: userData } = await supabase.auth.getUser();
-        const user = userData?.user;
-        if (!user) return;
-        const { error } = await supabase.rpc("record_referral", { _code: code });
-        if (!error) {
-          localStorage.removeItem("refCode");
-          toast({ title: "Referral applied", description: "Thanks for joining via a referral!" });
-        }
-      } catch (e) {
-        // Silently ignore errors like invalid/self-referral
-      }
-    };
+  // useEffect(() => {
+  //   const handleReferral = async () => {
+  //     try {
+  //       const code = localStorage.getItem("refCode");
+  //       if (!code) return;
+  //       const { data: userData } = await supabase.auth.getUser();
+  //       const user = userData?.user;
+  //       if (!user) return;
+  //       const { error } = await supabase.rpc("record_referral", { _code: code });
+  //       if (!error) {
+  //         localStorage.removeItem("refCode");
+  //         toast({ title: "Referral applied", description: "Thanks for joining via a referral!" });
+  //       }
+  //     } catch (e) {
+  //       // Silently ignore errors like invalid/self-referral
+  //     }
+  //   };
 
-    handleReferral();
-  }, [toast]);
+  //   handleReferral();
+  // }, [toast]);
   useEffect(() => {
   const getUserName = async () => {
     const { data } = await supabase.auth.getUser();

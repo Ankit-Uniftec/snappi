@@ -142,11 +142,11 @@ export interface Influencer {
   match_score: number | null;
   categories: string | null;
   location: string | null;
-  
+
   profile_image: string | null;
   average_views: number | null;
   created_at: string | null;
-  email?: string | null; // only for allowed users
+  email: string | null; // only for allowed users
 }
 
 interface UseInfluencersReturn {
@@ -234,10 +234,9 @@ export function useInfluencers(): UseInfluencersReturn {
 
           // Return influencers with email masked if not authorized
           const formatted = influencerData?.map((i: any) => {
-            const obj = i as any;
             return {
-              ...obj,
-              email: isAdmin || accessibleIds.has(obj.id) ? obj.email : null,
+              ...i,
+              email: i.email, // ALWAYS allow email to be sent to the frontend
             };
           }) as Influencer[];
 

@@ -1,6 +1,4 @@
-//////////////////////////////////////////////////
-
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Header } from "@/components/layout/Header";
 import { Sidebar } from "@/components/layout/Sidebar";
 import { useInfluencers } from "@/hooks/useInfluencers";
@@ -36,6 +34,7 @@ import {
   BarChart3,
   Hash
 } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
 
 const mainCountries = [
   { value: "usa", label: "🇺🇸 United States" },
@@ -72,7 +71,29 @@ export const SearchInfluencers = () => {
 
   const [showResults, setShowResults] = useState(false);
   const [shortlist, setShortlist] = useState<string[]>([]);
+  const [userId, setUserId] = useState<string | null>(null);
+
   const [mode, setMode] = useState<"none" | "all" | "filtered">("none");
+  useEffect(() => {
+    const loadShortlist = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+
+      setUserId(user.id);
+
+      // Fetch shortlist
+      // supabase client typings may not include the "shortlisted_influencers" table; cast the client to any to bypass strict table name typing
+      const { data } = await (supabase as any)
+        .from("shortlisted_influencers")
+        .select("influencer_id")
+        .eq("user_id", user.id);
+
+      setShortlist(data?.map((x) => x.influencer_id) || []);
+    };
+
+    loadShortlist();
+  }, []);
+
 
   // Filter influencers based on search criteria
   const filteredInfluencers = influencers.filter(influencer => {
@@ -97,7 +118,72 @@ export const SearchInfluencers = () => {
 
   const allCountries = [...mainCountries, ...otherCountries];
 
-  const resultsToShow=mode === "all" ? influencers : filteredInfluencers;
+  const resultsToShow = mode === "all" ? influencers : filteredInfluencers;
+  // Add influencer to shortlist
+  const addToShortlist = async (influencerId: string) => {
+    if (!userId) return;
+
+    const { error } = await (supabase as any)
+      .from("shortlisted_influencers")
+      .insert({
+        user_id: userId,
+        influencer_id: influencerId
+      });
+
+    if (!error) {
+      setShortlist([...shortlist, influencerId]);
+    }
+  };
+
+  // Remove influencer from shortlist
+  const removeFromShortlist = async (influencerId: string) => {
+    if (!userId) return;
+
+    const { error } = await (supabase as any)
+      .from("shortlisted_influencers")
+      .delete()
+      .eq("user_id", userId)
+      .eq("influencer_id", influencerId);
+
+    if (!error) {
+      setShortlist(shortlist.filter(id => id !== influencerId));
+    }
+  };
+
+  // send email to influencer on click contact for rates
+  const handleContactForRates = (influencer: any) => {
+    if (!influencer.email) {
+      alert("No contact email available for this influencer.");
+      return;
+    }
+
+    const subject = `Collaboration Opportunity with Your Brand`;
+    const body = `Hi ${influencer.name},
+
+I hope you're doing great! We would love to collaborate with you.
+
+Looking forward to hearing from you.
+
+Best regards,
+[Your Name]`;
+
+    // Try Gmail first, then fallback
+    const gmailUrl = `https://mail.google.com/mail/?view=cm&fs=1&to=${encodeURIComponent(
+      influencer.email
+    )}&su=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+
+    // Open Gmail in new tab
+    window.open(gmailUrl, "_blank");
+
+    // Also trigger default mail app if Gmail is not configured
+    setTimeout(() => {
+      window.location.href = `mailto:${influencer.email}?subject=${encodeURIComponent(
+        subject
+      )}&body=${encodeURIComponent(body)}`;
+    }, 500);
+  };
+
+
 
   return (
     <div className="min-h-screen bg-background">
@@ -436,9 +522,15 @@ export const SearchInfluencers = () => {
                               <div className="text-xs text-muted-foreground">Match Score</div>
                             </div>
                             <div className="text-center">
-                              <div className="text-lg font-bold text-success">
-                                {canAccessContactInfo(influencer.id) ? '£15-45' : 'Contact for rates'}
-                              </div>
+                              
+                                <button
+                                  onClick={() => handleContactForRates(influencer)}
+                                  className="text-lg font-bold text-blue-600  hover:text-blue-800"
+                                  
+                                >
+                                  Contact for rates
+                                </button>
+                              
                               <div className="text-xs text-muted-foreground">Per Post</div>
                             </div>
                           </div>
@@ -447,22 +539,21 @@ export const SearchInfluencers = () => {
                           <div className="flex flex-col space-y-2">
                             <Button
                               size="sm"
-                              onClick={() => {
-                                if (shortlist.includes(influencer.id)) {
-                                  setShortlist(shortlist.filter(id => id !== influencer.id));
-                                } else {
-                                  setShortlist([...shortlist, influencer.id]);
-                                }
-                              }}
+                              onClick={() =>
+                                shortlist.includes(influencer.id)
+                                  ? removeFromShortlist(influencer.id)
+                                  : addToShortlist(influencer.id)
+                              }
                               variant={shortlist.includes(influencer.id) ? "secondary" : "default"}
                             >
                               <Plus className="h-4 w-4 mr-2" />
                               {shortlist.includes(influencer.id) ? "In Shortlist" : "Add to Shortlist"}
                             </Button>
+
                             <Button
                               variant="outline"
                               size="sm"
-                              onClick={() => window.open(influencer.platform_link, "_blank","noopener,noreferrer")}
+                              onClick={() => window.open(influencer.platform_link, "_blank", "noopener,noreferrer")}
                             >
                               View Profile
                             </Button>
